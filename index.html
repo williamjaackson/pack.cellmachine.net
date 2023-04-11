@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Preview from Zip</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: rgb(45, 45, 45);
+            display: flex;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+
+        }
+        #dropArea {
+            border: 2px dashed #888;
+            border-radius: 5px;
+            width: 300px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        #grid-wrapper {
+            width: 100%;
+            height: 100%;
+
+        }
+        #bg-grid {
+            position: absolute;
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-gap: 5px;
+        }
+        #cell-grid {
+            position: absolute;
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            grid-gap: 5px;
+        }
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        img.bg {
+            opacity: 0;
+        }
+        html {
+            /* height: 100%; */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>Drag and Drop Zip File</h1>
+        <div id="dropArea">Drop your zipped images here</div>
+    </div>
+    <div id="grid-wrapper">
+        <div id="bg-grid"></div>
+        <div id="cell-grid"></div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script>
+        const dropArea = document.getElementById("dropArea");
+const bggrid = document.getElementById("bg-grid");
+const grid = document.getElementById("cell-grid");
+const content = document.querySelector(".content");
+
+const allowedFiles = [
+    "generator.png",
+    "mover.png",
+    "CWspinner_alt.png",
+    "CCWspinner_alt.png",
+    "trash.png",
+    "slide.png",
+    "push.png",
+    "enemy.png",
+    "immobile.png",
+    "BGDefault.png",
+    "0.png"
+];
+
+var files = {};
+
+dropArea.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropArea.style.backgroundColor = "#eee";
+});
+
+dropArea.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    dropArea.style.backgroundColor = "";
+});
+
+dropArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropArea.style.backgroundColor = "";
+
+
+    const file = e.dataTransfer.files[0];
+    if (file.type !== "application/zip") {
+        alert("Please drop a zip file");
+        return;
+    }
+
+
+    const zip = new JSZip();
+    zip.loadAsync(file).then((contents) => {
+        let promises = [];
+        Object.values(contents.files).forEach((file) => {
+            var name = file.name.split("/").pop();
+
+            if (file.dir || !allowedFiles.includes(name)) return;
+
+            promises.push(
+                file.async("blob").then((blob) => {
+                    const imageFile = new File([blob], name, { type: "image/png" });
+                    files[name] = imageFile;
+                })
+            );
+        });
+
+        Promise.all(promises).then(() => {
+            // background
+            for (let i = 0; i < 44; i++) {
+                let img = document.createElement("img");
+                img.src = URL.createObjectURL(files["BGDefault.png"]);
+                bggrid.appendChild(img);
+            }
+            for (let i = 0; i < 4; i++) {
+                let order = [
+                    "generator.png",
+                    "mover.png",
+                    "CWspinner_alt.png",
+                    "CCWspinner_alt.png",
+                    "push.png",
+                    "slide.png",
+                    "enemy.png",
+                    "trash.png",
+                    "immobile.png",
+                    "0.png"
+                ]
+                order.forEach((name) => {
+                    let img = document.createElement("img");
+                    img.src = URL.createObjectURL(files[name]);
+                    grid.appendChild(img);
+                });
+                let img = document.createElement("img");
+                img.className = "bg";
+                img.src = URL.createObjectURL(files["BGDefault.png"]);
+                grid.appendChild(img);
+            }
+
+            // rotate every row by 90 degrees more than the previous row
+            for (let i = 0; i < 4; i++) {
+                let start = i * 11;
+                let end = start + 11;
+                let row = Array.from(grid.children).slice(start, end);
+
+                row.forEach((img, index) => {
+                    img.style.transform = `rotate(${90 * i}deg)`;
+                    img.style.gridColumn = `${index + 1}`;
+                    img.style.gridRow = `${i + 1}`;
+                });
+            }
+
+        });
+
+    content.style.display = "none";
+
+    });
+});
+
+    </script>
+</body>
+</html>
