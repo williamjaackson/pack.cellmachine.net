@@ -74,7 +74,6 @@
                         if (file.dir || !textures.includes(name)) return;
 
                         promises.push(file.async("base64").then((data) => {
-                            console.log(name, data);
                             texturepack[name] = data;
                         }));
                     });
@@ -82,7 +81,12 @@
                         console.log(texturepack);
                         // put all images on the page
                         textures.forEach((texture) => {
-                            console.log(texturepack[texture]);
+                            // check if the texture is set
+                            if (!texturepack[texture]) {
+                                texturepack[texture] = "https://i.stack.imgur.com/ajwm5.png"
+                            } else {
+                                texturepack[texture] = `data:image/png;base64,${texturepack[texture]}`;
+                            }
                         });
 
                         load_route("preview");
@@ -93,14 +97,14 @@
                         
                         for (let i = 0; i < 44; i++) {
                             let img = document.createElement("img");
-                            img.src = `data:image/png;base64,${texturepack["BGDefault.png"]}`;
+                            img.src = texturepack["BGDefault.png"];
                             bgGrid.appendChild(img);
                         }
 
                         for (let i = 0; i < 4; i++) {
                             textures.forEach((texture) => {
                                 let img = document.createElement("img");
-                                img.src = `data:image/png;base64,${texturepack[texture]}`;
+                                img.src = texturepack[texture];
                                 cellGrid.appendChild(img);
                                 img.style.rotate = `${i * 90}deg`;
                             });
